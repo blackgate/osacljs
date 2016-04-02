@@ -1,4 +1,4 @@
-(ns elbow.extra
+(ns osacljs.extra
   (:require
     cljs.pprint
     cljs.test

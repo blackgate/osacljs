@@ -1,17 +1,19 @@
-# elbow
-Use Replumb in Node
+# osacljs
+
+Use Replumb in OSX Javascript for Automation (JXA)
+This is a attempt to port mfikes [elbow](https://github.com/mfikes/elbow) to JXA.
 
 # Usage
 
 1. `lein cljsbuild once`
-2. `node out/main.js <src-paths>`
+2. `osascript out/main.js <src-paths>`
 
 where `src-paths` looks like `src1:/bar/src2:/foo/src3`
 
 # Example
 
 ```
-$ node out/main.js
+$ osascript out/main.js
 cljs.user=> 3
 3
 cljs.user=> (+ 3 2)
@@ -22,8 +24,4 @@ foo.bar=> ::a
 :foo.bar/a
 ```
 
-# Demo
 
-Watch a demo to see it in action:
-
-[![Elbow Demo](http://img.youtube.com/vi/VwARsqTRw7s/0.jpg)](http://www.youtube.com/watch?v=VwARsqTRw7s "Replumb in Node")

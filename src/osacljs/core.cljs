@@ -1,28 +1,47 @@
-(ns elbow.core
+(ns osacljs.core
   (:require [clojure.string :as string]
-            [cljs.nodejs :as nodejs]
             [replumb.core :as replumb]))
 
-(nodejs/enable-util-print!)
+(def objc-import (js* "ObjC['import']"))
 
-;; Node file reading fns
+(objc-import "Foundation")
+(objc-import "readline")
 
-(def fs (nodejs/require "fs"))
+(js* "global = this")
 
-(defn node-read-file
-  "Accepts a filename to read and a callback. Upon success, invokes
-  callback with the source. Otherwise invokes the callback with nil."
-  [filename cb]
-  (.readFile fs filename "utf-8"
-    (fn [err source]
-      (cb (when-not err
-            source)))))
+(def fm js/$.NSFileManager.defaultManager)
 
-(defn node-read-file-sync
+(defn- readline [prompt]
+  (let [line (js/$.readline prompt)]
+    (js/$.add_history line)
+    line))
+
+(defn- enable-util-print! []
+  (set! *print-newline* false)
+  (letfn [(print-fn [& args]
+            (.apply (.-log js/console) js/console (into-array args)))]
+    (set! *print-fn* print-fn)
+    (set! *print-err-fn* print-fn))
+  nil)
+
+(enable-util-print!)
+
+
+;; OSA file reading fns
+
+(defn osa-read-file-sync
   "Accepts a filename to read. Upon success, returns the source.
   Otherwise returns nil."
   [filename]
-  (.readFileSync fs filename "utf-8"))
+  (let [data (.contentsAtPath fm filename)]
+    (js/ObjC.unwrap (js/$.NSString.alloc.initWithDataEncoding data js/$.NSUTF8StringEncoding))))
+
+
+(defn osa-read-file
+  "Accepts a filename to read and a callback. Upon success, invokes
+  callback with the source. Otherwise invokes the callback with nil."
+  [filename cb]
+  (cb (osa-read-file-sync filename)))
 
 ;; Facilities for loading Closure deps
 
@@ -35,7 +54,7 @@
                [path (map second
                        (re-seq #"'(.*?)'" provides))])
           (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\].*"
-            (node-read-file-sync (str goog-path-root "deps.js"))))]
+            (osa-read-file-sync (str goog-path-root "deps.js"))))]
     (into {}
       (for [[path provides] paths-to-provides
             provide provides]
@@ -46,7 +65,7 @@
 (defn load-goog
   [name cb]
   (if-let [goog-path (get (closure-index-mem) name)]
-    (if-let [source (node-read-file-sync (str goog-path ".js"))]
+    (if-let [source (osa-read-file-sync (str goog-path ".js"))]
       (cb {:source source
            :lang   :js})
       (cb nil))
@@ -137,25 +156,13 @@
 
 (defn read-eval-print-loop
   [src-paths]
-  (let [node-readline (nodejs/require "readline")
-        rl (.createInterface node-readline
-             #js {:input  (.-stdin js/process)
-                  :output (.-stdout js/process)})]
-    (doto rl
-      (.setPrompt (replumb/get-prompt))
-      (.on "line"
-        (fn [cmd]
-          (replumb/read-eval-call
-            (merge
-              (replumb/nodejs-options (make-load-fn src-paths node-read-file)))
-            (fn [res]
-              (-> res
-                replumb/result->string
-                println)
-              (.setPrompt rl (replumb/get-prompt))
-              (.prompt rl))
-            cmd)))
-      (.prompt))))
+  (let [cmd (readline (replumb/get-prompt))]
+    (replumb/read-eval-call
+     (merge
+      (replumb/options :nodejs (make-load-fn src-paths osa-read-file)))
+     #(println (replumb/result->string %))
+     cmd)
+    (recur src-paths)))
 
 (defn arg->src-paths
   [arg]
@@ -166,6 +173,6 @@
     (if-not (empty? args)
       (-> (first args)
         arg->src-paths)
-      [])))
+      ["./"])))
 
-(set! *main-cli-fn* -main)
+(set! js/global.run #(apply -main %))
