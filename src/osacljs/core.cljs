@@ -1,6 +1,7 @@
 (ns osacljs.core
   (:require [clojure.string :as string]
-            [replumb.core :as replumb]))
+            [replumb.core :as replumb]
+            [replumb.repl :as replumb-repl]))
 
 (def objc-import (js* "ObjC['import']"))
 
@@ -11,10 +12,23 @@
 
 (def fm js/$.NSFileManager.defaultManager)
 
-(defn- readline [prompt]
-  (let [line (js/$.readline prompt)]
-    (js/$.add_history line)
-    line))
+(defn- multiline?
+  [input]
+  (try
+    (replumb-repl/read-string {:features #{:cljs}} input)
+    false
+    (catch :default e
+      (= "EOF" (subs (.-message e) 0 3)))))
+
+(defn- prompt-read
+  [prompt]
+  (loop [p prompt acc ""]
+    (let [input (js/$.readline p)
+          form (str acc "\n" input)]
+      (js/$.add_history input)
+      (if (multiline? form)
+        (recur (str (apply str (repeat (- (count prompt) 5) " ")) "#_=> ") form)
+        form))))
 
 (defn- enable-util-print! []
   (set! *print-newline* false)
@@ -144,7 +158,7 @@
   with the source of the library (as string)."
   [src-paths read-file-fn]
   (fn [{:keys [name macros path]} cb]
-    (prn name)
+    ;(prn name)
     (if (load? name macros)
       (if (re-matches #"^goog/.*" path)
         (load-goog name cb)
@@ -156,7 +170,7 @@
 
 (defn read-eval-print-loop
   [src-paths]
-  (let [cmd (readline (replumb/get-prompt))]
+  (let [cmd (prompt-read (replumb/get-prompt))]
     (replumb/read-eval-call
      (merge
       (replumb/options :nodejs (make-load-fn src-paths osa-read-file)))
