@@ -10,6 +10,7 @@
 
 (js* "global = this")
 
+
 (def fm js/$.NSFileManager.defaultManager)
 
 (defn- multiline?
@@ -121,22 +122,30 @@
           src-path src-paths]
       (str src-path "/" path extension))))
 
-(defn skip-load?
-  [name macros]
-  ((if macros
-     #{'cljs.pprint}
-     #{'goog.object
-       'goog.string
-       'goog.string.StringBuffer
-       'goog.array
-       'clojure.string
-       'clojure.set
-       'cljs.core
-       'cljs.env
-       'cljs.reader
-       'cljs.tagged-literals
-       'cljs.tools.reader.impl.utils
-       'cljs.pprint}) name))
+(defn- skip-load?
+  [name macros?]
+  ((if macros?
+     '#{cljs.core
+        cljs.js
+        cljs.pprint
+        cljs.repl
+        cljs.env.macros
+        cljs.analyzer.macros
+        cljs.compiler.macros
+        cljs.tools.reader.reader-types
+        lazy-map.core}
+     '#{cljs.core
+        com.cognitect.transit
+        com.cognitect.transit.delimiters
+        com.cognitect.transit.handlers
+        com.cognitect.transit.util
+        com.cognitect.transit.caching
+        com.cognitect.transit.types
+        com.cognitect.transit.eq
+        com.cognitect.transit.impl.decoder
+        com.cognitect.transit.impl.reader
+        com.cognitect.transit.impl.writer})
+    name))
 
 ;; An atom to keep track of things we've already loaded
 (def loaded (atom #{}))

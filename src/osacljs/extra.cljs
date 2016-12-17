@@ -1,14 +1,19 @@
 (ns osacljs.extra
   (:require
+    clojure.core.reducers
+    clojure.zip
+    clojure.data
     cljs.pprint
+    cljs.spec
     cljs.test
+    cljs.analyzer.api
+    goog.asserts
     goog.Delay
     goog.Disposable
     goog.Promise
     goog.Throttle
     goog.Timer
     goog.Uri
-    goog.array.ArrayLike
     goog.color
     goog.color.Hsl
     goog.color.Hsv
@@ -22,7 +27,6 @@
     goog.crypt.Cbc
     goog.crypt.Hash
     goog.crypt.Hmac
-    goog.crypt.JpegEncoder
     goog.crypt.Md5
     goog.crypt.Sha1
     goog.crypt.Sha2
@@ -48,6 +52,7 @@
     goog.date.relative.Unit
     goog.date.relativeWithPlurals
     goog.date.weekDay
+    goog.debug.Console
     goog.format
     goog.format.EmailAddress
     goog.format.HtmlPrettyPrinter
@@ -85,6 +90,7 @@
     goog.json.Reviver
     goog.json.Serializer
     goog.json.hybrid
+    goog.labs.format.csv
     goog.locale
     goog.locale.TimeZoneFingerprint
     goog.locale.defaultLocaleNameConstants
